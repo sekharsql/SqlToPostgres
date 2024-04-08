@@ -13,7 +13,7 @@ SET @LS_QUERY =
 
 
 	,   STUFF( ( SELECT '''' X.['''' + COLUMN_NAME + '''']=''''  +''''Y.['''' + COLUMN_NAME + ''''] AND'''' 
-    FROM ['+@SRC_DB_NAME+'[INFORMATION_SCHEMA].KEY_COLUMN_USAGE WHERE OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA + ''''.'''' + QUOTENAME(CONSTRAINT_NAME)), ''''IsPrimaryKey'''') = 1 
+    FROM ['+@SRC_DB_NAME+'].[INFORMATION_SCHEMA].KEY_COLUMN_USAGE WHERE OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA + ''''.'''' + QUOTENAME(CONSTRAINT_NAME)), ''''IsPrimaryKey'''') = 1 
   AND TABLE_NAME = T.NAME AND TABLE_SCHEMA = SCHEMA_NAME(SCHEMA_ID) ORDER BY ORDINAL_POSITION FOR XML PATH('''''''') ), 1, 2, '''''''' )  
   +'''' 1=1'''' as CTE_JOIN ,
   
@@ -22,6 +22,6 @@ SET @LS_QUERY =
 from '+@SRC_DB_NAME+'.sys.tables T left outer   join sys.change_tracking_tables CT on T.object_id = CT.object_id left outer  JOIN sys.columns c ON t.object_id=c.object_id and c.is_identity=1'
 
 
-SET @LS_QUERY =  'INSERT INTO LS_CT_TRACKING_NORTHWIND SELECT * FROM OPENQUERY('+@LS_NAME+','''+@LS_QUERY+''')'
+SET @LS_QUERY =  'INSERT INTO AUTO_CT_TRACKING_NORTHWIND SELECT * FROM OPENQUERY('+@LS_NAME+','''+@LS_QUERY+''')'
 
 exec  (@LS_QUERY )

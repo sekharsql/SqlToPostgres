@@ -1,3 +1,4 @@
+ 
 CREATE PROC PR_MGR_LNK_PREPARE_ANCHOR_NORTHWIND (@LS_NAME VARCHAR(90) , @SRC_DB_NAME VARCHAR(90) )
 AS
 
@@ -25,3 +26,4 @@ from '+@SRC_DB_NAME+'.sys.tables T left outer   join sys.change_tracking_tables 
 SET @LS_QUERY =  'INSERT INTO AUTO_CT_TRACKING_NORTHWIND SELECT * FROM OPENQUERY('+@LS_NAME+','''+@LS_QUERY+''')'
 
 exec  (@LS_QUERY )
+delete from  AUTO_CT_TRACKING_NORTHWIND where TBL_NAME =  '[MSchange_tracking_history]'

@@ -1,0 +1,1597 @@
+
+----*****************************************************************************************************************************************************
+-- 1. SQL vs PL/pgSQL
+/*
+Other than SQL commands to execute (DDL ,DML,DCL)  similar to SQL SERVER following ANSI standards
+
+PL/pgSQL is a BLOCK-structured language to execute/create objects  like
+declare , raise , begin-end,if , case , create function/proc/trigger 
+
+*/
+
+ --2- what is a block -------------------------------------
+/*
+block contains begin and end statements enclosed in quotes 
+DO  command is used to execute the block
+*/
+
+DO 
+'begin
+
+ end'
+
+RAISE INFO 'Hello' ; 
+
+--3  print a hello statement ---------------------------------------
+/* PostgreSQL equavilant of print command in SQL Server is RAISE INFO 
+Keep in mind that RAISE INFO messages are displayed in the output of the SQL command, which is useful during interactive sessions but might not be visible in certain application contexts.
+*/
+DO 
+'begin 
+ RAISE INFO ''Hello '' ; 
+ end'
+
+---  since maintain the quotes with in the body is very inconvenient , you can specify quote tags using $tag$  to keep the code in quotes.
+DO 
+$$begin
+raise info 'Hello' ; 
+ end
+$$
+
+-------you can specify any tags to create a block ------------------------------------------------------------------
+DO 
+$custom$
+begin
+raise info 'Hello from raise info' ; 
+end
+$custom$
+
+
+
+----Declare variable should be the 1st line in the block (before BEGIN statement) ----------------------------------
+DO $$ 
+DECLARE my_var_1  INTEGER; -- Declare a local variable named my_variable of type INTEGER
+BEGIN 
+  
+    my_var_1 := 16 ; -- Assign a value to the variable
+    
+    RAISE NOTICE 'The value of my_variable is %' , my_var_1;
+   
+END $$;
+
+--------------------------------------------------------------------------
+
+DO $$ 
+DECLARE vname varchar(20); nage int; -- Declare a local variable named my_variable of type INTEGER
+BEGIN 
+  
+    vname := 'chandra' ; -- Assign a value to the variable
+    nage := 16 ; -- Assign a value to the variable
+    
+    
+    RAISE NOTICE 'my name is % and age is %' , vname,nage;
+   
+END $$;
+
+--Lets see the restrictions of the BLOG ----------------------------------------------------------------------------------------------------------------------------------
+
+DO $$ 
+DECLARE my_var_1  INTEGER; -- Declare a local variable named my_variable of type INTEGER
+BEGIN 
+  
+   return  select * from customers;
+    
+END $$;
+
+----print a row using record variable----------------------------------------------------------------------------------------------------------------
+
+DO $$
+DECLARE
+    row_data record;
+BEGIN
+    -- Fetching data from a table into the row_data variable
+    SELECT * INTO row_data FROM customers;
+    -- Printing the entire row
+    RAISE INFO 'Row data: %', row_data;
+END $$;
+ 
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+DO $$
+DECLARE
+    V_productid int ;
+BEGIN
+    -- Fetching data from a table into the row_data variable
+    SELECT PRODUCT_ID INTO V_productid  FROM products;
+   -- SELECT V_productid := PRODUCT_ID   FROM products; -- this wont work
+    -- Printing the entire row
+    RAISE INFO 'product id is : %', V_productid;
+END $$;
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+--- If statement ---------------
+-- similar to SQL Server IF statement
+--- Statements after IF / ELSE doesn’t need  BEGIN -END
+--  Use ELSE IF instead ELSEIF
+
+DO $$ 
+
+DECLARE  X INT := 1 ;     Y INT := 1;
+
+BEGIN
+
+    IF X = 1 THEN
+
+        RAISE NOTICE 'X  1 is true';
+        
+
+    ELSIF Y = 3 THEN
+
+        RAISE NOTICE 'Y 2 is true';
+
+    ELSE
+
+        RAISE NOTICE 'Neither condition is true';
+
+    END IF;
+
+END $$;
+
+
+
+
+---------------------------------------------------------------
+
+DO $$ 
+
+DECLARE
+    X INT := 1;
+    Y INT := 1;
+BEGIN
+    IF X = 3 THEN
+        RAISE NOTICE 'X  1 is true';
+    ELSIF Y = 3 THEN
+        RAISE NOTICE 'Y 2 is true';
+    ELSE
+        RAISE NOTICE 'Neither condition is true';
+    END IF;
+END $$;
+
+----------------****************************************************
+
+
+DECLARE @CNTR INT = 1;
+
+WHILE ( @CNTR <= 5)
+BEGIN
+    PRINT 'The CNTR value is = ' + CONVERT(VARCHAR,@CNTR)
+    SET @CNTR  = @CNTR  + 1
+END
+
+
+
+---------comkplete while loop------------------------------------------------------------------
+
+DO $$
+DECLARE CNTR INT := 1;
+
+BEGIN
+
+    WHILE CNTR <= 20   LOOP
+        
+        IF CNTR  = 5 THEN
+         RAISE NOTICE 'CNTR  is 5 , go to begin n : %', CNTR;
+         CNTR := CNTR + 1;   
+        CONTINUE; --> GO TO BEGIN
+        END IF;
+
+        IF CNTR > 10  THEN
+        
+             RAISE NOTICE 'CNTR value % >  10. Exit', CNTR;
+        
+            EXIT;
+        END IF ;
+
+        RAISE NOTICE 'CNTR value: %', CNTR;
+        CNTR := CNTR + 1;
+
+    END LOOP;
+
+END $$;
+
+
+---
+
+DO
+$$
+DECLARE CNT INT :=1;
+BEGIN
+
+        WHILE  CNT <= 5 LOOP
+            CNT := CNT +1;
+            RAISE INFO '%',CNT;
+        END LOOP;
+
+END;
+$$;
+
+----FOR loop  
+
+DO $$
+BEGIN
+    FOR i IN 1..5 LOOP
+        RAISE INFO 'Value of i: %', i;
+    END LOOP;
+END $$;--------------------------------------------------------------------------------------
+------------------- for loop array
+
+DO $$
+DECLARE
+    arr INTEGER[] := ARRAY[10, 20, 30, 40, 50];
+    elem INTEGER;
+BEGIN
+    FOREACH elem IN ARRAY arr LOOP
+        RAISE INFO 'Array element: %', elem;
+    END LOOP;
+END $$;
+
+-- iterating over results
+DO $$
+DECLARE
+    row_data RECORD;
+BEGIN
+    FOR row_data IN SELECT * FROM customers LOOP
+        RAISE NOTICE 'Column 1: %, Column 2: %', row_data.customer_id, row_data.company_name;
+    END LOOP;
+END $$;
+
+
+
+
+-----Erroe Handlinfg--------------------------------------------------------------------------------------
+
+ 
+
+ect 1;
+EXCEPTION
+  WHEN division_by_zero THEN
+    -- Handle division by zero error
+    RAISE NOTICE 'Error: Division by zero occurred';
+
+  WHEN others THEN
+    -- Handle other error conditions
+    RAISE NOTICE 'Error: An error occurred';
+END;
+$$;
+
+
+
+-------------------------------------------------------------------------------------------
+
+ , x; -- literal % is to replace the next variable value , for 2 variable mention multiple %. to
+                                                                -- to emit % in the text write %%
+---3.2 print 2 variables-------------------------------------
+DO $$ 
+DECLARE  ssn varchar(9); age INT; -- Declare a local variable named my_variable of type INTEGER
+BEGIN 
+  
+    ssn  := '987654321'; -- Assign a value to the variable
+    age  := 21; -- Assign a value to the variable
+    
+    RAISE NOTICE 'my ssn is  % and my age is %', ssn,age; -- literal % is to replace the next variable value , for 2 variable mention multiple %. to
+                                                                -- to emit % in the text write %%
+END $$;
+
+
+--execute (must be in a block) ---------------------------------------------------------------
+
+
+DO $$
+BEGIN
+execute ('create table ttt(iid int);');
+end;
+$$;
+
+--  you can use execute in prepared statements
+ 
+
+PREPARE my_prepare1 as ( select * from customers);
+execute my_prepare1 -- its a compiled statement , recommended for repeated statements in a session
+
+ 
+PREPARE my_prepare1 as  (execute 'select * from customers');
+execute my_prepare1 -- its a compiled statement , recommended for repeated statements in a session
+
+
+-----format - to pass the variables to a select statement you can use format statement inside a function
+
+SELECT FORMAT('Hello, %s','PostgreSQL');
+
+s formats the argument value as a string. NULL is treated as an empty string.
+I treats the argument value as an SQL identifier.
+L quotes the argument value as an SQL literal.
+
+
+do $$
+declare id varchar(9) ='sekhar';
+declare ret varchar(9);
+begin
+execute format('update CUSTOMERS set company_name = ''COPMPANY-1''  where CUSTOMER_ID = %L', 'alfdi');  -- FOPRMAT
+execute format('select company_name  from  CUSTOMERS   where CUSTOMER_ID =  %L', id) INTO ret ;  -- FOPRMAT
+
+RAISE  ALFKI'%',ret;
+end;
+$$;
+
+select * from customers where customer_id = 'alfdi'
+
+
+---3.2 ALFKI-------------------------------------
+/*
+for x in * 1..10   or  select stmnt     
+    loop
+        x
+    end loop
+
+
+*/
+
+DO $$ 
+DECLARE  inumber INT; -- Declare a local variable named my_variable of type INTEGER
+BEGIN 
+  FOR  inumber in 1..10 
+    loop
+  
+    raise notice '-%',inumber;
+    end loop;
+END $$;
+
+--- loop rows---------------------------------------
+
+DO $$
+DECLARE myrows record;
+begin
+FOR myrows in select * from customers
+
+    loop
+        raise notice '%,',myrows.customer_id;
+    end loop;
+end;
+$$;
+
+-----or (dynamic)------------------------------
+DO $$
+DECLARE myrows record;
+var_customerid VARCHAR(9);
+var_company_name varchar(90);
+begin 
+var_customerid := 'alfdi';
+var_company_name := 'COPMPANY-1';
+
+--FOR myrows in execute 'select ALFKIfrom '||'customers where customer_id =' ||'''alfdi'''
+ FOR myrows IN execute('SELECT * FROM customers where customer_id =$1 and company_name=$2'  ) using var_customerid ,var_company_name
+    loop
+        raise notice '%,',ALFKIcustomer_id;
+    end loop;
+end;
+$$;
+
+
+--------------------------------------
+/* PL/pgSQL 
+below statement produce an error " -- Error : query has no destination for result data "
+unlike procedures/ SQL Server , select statement with multi-results with in a function wont produce the output.
+
+you need the below to produce results
+
+1. iterate through FOR loop and print the messages
+.. check the notes in comparision cheet sheet for the complete list
+*/
+-- Below code gives error
+DO 
+$$
+    BEGIN
+        select * from customers ; 
+    END
+$$
+
+-- Result : query has no destination for result data 
+-------------
+-- You need to create a table valued function to return the results or use STANDARD SQL to get the results 
+        select * from customers ; 
+ 
+-- check how to create in function in future examples ... 
+
+-- or if you want to iterate through all the table rows to operate at row level then below is an example
+-------------
+DO $$ 
+DECLARE 
+    my_table_record record;
+BEGIN
+    -- Your logic to fetch data into my_table_record
+    FOR my_table_record IN (SELECT * FROM customers) 
+    LOOP
+        -- Process each row as needed
+        -- You can also use RAISE NOTICE to print information
+        RAISE NOTICE 'Column1: %, Column2: %', my_table_record.customer_id, my_table_record.company_name;
+    END LOOP;
+END $$;
+
+ 
+------if condition------------------------------------------------------------------------------------------------------------------
+
+
+DO $$ 
+DECLARE
+    condition1 BOOLEAN := true;
+    condition2 BOOLEAN := false;
+BEGIN
+    IF condition1 THEN
+        -- Code to execute when condition1 is true
+        RAISE NOTICE 'Condition 1 is true';
+    ELSIF condition2 THEN
+        -- Code to execute when condition2 is true
+        RAISE NOTICE 'Condition 2 is true';
+    ELSE
+        -- Code to execute if none of the conditions are true
+        RAISE NOTICE 'Neither condition is true';
+    END IF;
+END $$;
+
+
+--> to return the records in 2d table formmat , you can directly call the select statement    :)
+-- if you need to create a object with some programming in then you can go with creating a table valued function..
+-- lets explore the functions.. including   scalar and table valued functions.
+
+
+
+--------------------------------------
+/*  Function structure.   $$ - decl - begin return end lang
+" ; " - terminates a command , so except begni and $$ rest of the cmds must terminate using " ; "
+
+
+create or replace function fn_1(my_variable int / array[] / row) as
+returns                          int / array[] / table 
+
+$$
+
+BEGIN       ...
+
+< appends   | RETURN NEXT 
+to final    | RETURN QUERY
+return >    | RETURN QUERY USING
+          /
+        /
+return                          
+
+
+END
+$$
+*/
+
+
+-- QA -- is it possible to execute using execute outside block 
+-- A -- not possible outside the function , unless you are executing an object (prepared statement using prepare   or function) -- I will cover this in few slides
+-- Q -- How about using execute ('select statement') with in a function 
+-- A -- 
+
+create or replace function fn_1(my_variable int / array[] / row) as
+returns                          int / array[] / table /                                 SETOF  myset
+
+$$
+    DECLARE SCALAR OR *TABLE                                                              r myset%rowtype
+BEGIN       
+
+
+                                                                        .................... row/row processing ............
+                                                                        --- send each row to final RETURN
+                                                                        
+                                                                                                    For r in select * from loop
+                                                                    < appends to final return       | RETURN NEXT 
+                                                                                                    | RETURN QUERY "select *..$1"  USING myvar
+                                                                                                
+                                                                                                :(  -- pay attention to work_mem
+                                                                        ........................................          
+return                                  
+language plpgsql
+
+
+END
+$$
+-------------- -------------- -------------- -------------- -------------- -------------- -------------- 
+create function fn_scalar (n int) returns int 
+as
+$$
+declare ret int;
+BEGIN
+
+ret := n*2;
+return ret;
+end;
+$$
+language plpgsql;
+
+--------------
+select fn_scalar(9);
+
+
+
+
+--function overloading------------------------------------
+/*
+its possible to create new functions with the same name but different parameters.
+
+*/
+
+create or replace  function fn_overload (v1 int)  
+returns int as
+$$
+declare ret INT;
+BEGIN
+ret := v1* 100;
+return ret;
+end;
+$$
+LANGUAGE plpgsql;
+
+select fn_overload (1);
+
+---- using same function name , create another one but with different SET of parameters.
+create or replace  function fn_overload (v1 int, v2 int)  
+returns int as
+$$
+declare ret INT;
+BEGIN
+ret := v2* 1000;
+return ret;
+end;
+$$
+LANGUAGE plpgsql;
+
+select fn_overload (null,1)
+
+---- lets create one more using same name , with different param names and same SET....
+-- this one whould fail , because parameters SET should be different
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+create or replace  function fn_overload (v3 int, v4 int)  
+returns int as
+$$
+declare ret INT;
+BEGIN
+ret := v2* 1000;
+return ret;
+end;
+$$
+LANGUAGE plpgsql;
+
+select fn_overload (null,1)
+---------------------------------------------------
+
+
+----loop through rows-- X Try to Avoid This--------
+create function fn_loop_rows() returns int as
+ $$ 
+DECLARE 
+    my_table_record record;
+BEGIN
+    -- Your logic to fetch data into my_table_record
+    FOR my_table_record IN (SELECT * FROM customers) 
+    LOOP
+        -- Process each row as needed
+        -- You can also use RAISE NOTICE to print information
+        RAISE NOTICE 'Column1: %, Column2: %', my_table_record.customer_id, my_table_record.company_name;
+    END LOOP;
+END $$
+language plpgsql;
+
+--------------
+select fn_loop_rows() ;
+
+-------------- -------------- -------------- -------------- -------------- -------------- -------------- 
+-- function without return.. (to simply returns a record) a
+create or replace function fn_rets () returns setof customers as 'select * from customers;' language 'sql';
+select fn_rets()
+
+-- but who needs this , instead we can query the table directly
+-- thjis is for parameterized views.. but since you can refer an existing table only "setof <tablename>" , you can refer a composite type object instead table as well.
+create or replace function fn_rets1 (id varchar(9)) returns setof customers as 'select * from customers where customer_id=$1;' language 'sql';
+select fn_rets1('alfdi')
+
+---or - here . .instead using "set of customers" , I am using "TABLE (like customers)  .. both are same, more readable ALFKImodern
+
+create or replace function fn_rets3 () returns TABLE (LIKE customers)  as 'select * from customers;' language 'sql';
+select fn_rets3()
+
+or 
+
+create or replace function fn_rets3 () returns TABLE (LIKE customers)  as $$ select * from customers;$$ language 'sql';
+select fn_rets3()
+
+
+
+drop function fn_rets4
+drop type type_customerid_companyname
+
+
+create  type type_customerid_companyname as (customerid varchar(9),companyname varchar(90));
+
+
+
+create or replace function fn_rets4 () returns table (like  type_customerid_companyname)  as $$ select customer_id as customerid,company_name as companyname from customers;$$ language 'sql';
+
+select  fn_rets4()
+
+
+
+
+---- but these records are comma seperated strings... , so may be good for 1 column recordsets in real time.
+
+---- !!!!! BELOW FUNCTION NEEDS  SUFFICIENT WORK_MEM .... 
+-- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------------------------------------------------------------------
+
+select * from    pg_catalog.pg_proc 
+
+select * from customers 
+
+drop function fn_tab_1( varchar,varchar);
+
+select column_name, data_type, character_maximum_length ,table_name  from INFORMATION_SCHEMA.COLUMNS 
+where table_name ='customers';
+
+ 
+
+
+CREATE OR REPLACE  FUNCTION fn_tab_1 ()
+RETURNS TABLE(v_customerid varchar(9),  v_companyname bytea)
+AS $$
+BEGIN
+   
+    RETURN QUERY SELECT customer_id  , company_name  ::bytea   from customers WHERE CUSTOMER_ID = 'ALFKI';
+ 
+END;
+$$ LANGUAGE plpgsql;
+
+select fn_tab_1();
+
+
+
+drop function fn_tab_2()
+
+-------------------- list of records as comma seperated
+CREATE OR REPLACE  FUNCTION fn_tab_2  ()
+RETURNS setof customers
+AS $$
+BEGIN
+    RETURN QUERY execute 'SELECT *   from customers;' ;
+END;
+$$ LANGUAGE plpgsql;
+
+
+SELECT fn_tab_2 ();
+
+-------------------- same as above using SQL as language
+create or replace function fn_rets () returns setof customers as 'select * from customers;' language 'sql';
+select fn_rets()
+
+
+
+
+
+
+
+select * from  fn_tab_1('alfdi');
+
+ALFKI--------------------------------------
+---Table valued function-----------------------------------
+
+CREATE OR REPLACE FUNCTION f_3 (v1 INTEGER)
+RETURNS TABLE(v2 INTEGER, v3 INTEGER)
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT *
+    FROM (
+        VALUES(v1, v1 + 1), 
+              (v1 * 2, (v1 + 1) * 2)
+    ) t(a, b);
+END
+$$ LANGUAGE plpgsql;
+
+
+
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
+--------------------------------------
+/*
+
+*/
+
+
+--------------------------------------
